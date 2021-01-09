@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" href="images/favicon.png" type="image/png">
+	<link rel="stylesheet" type="text/css" href="css/font-awesome.css">
+	<title>Games</title>
+	<style>
+	    	@font-face{
+        		font-family: Phantom-cyr-lat;
+        		src: url(fonts/Phantom-cyr-lat.ttf);
+    		}
+			*{
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+			}
+    		body{
+    			background: black;
+    					
+    		}
+			#pole{
+				width:600px;
+				height:400px;
+				border:1px solid rgba(255,255,255, .7);
+				position: relative;
+				margin: 20px auto;
+			}
+			#ball{
+				position: absolute;
+				top:0;
+				left:0;
+				width:30px;
+				height:30px;
+				background: red;
+				border-radius:50%;
+			}
+			#palka{
+				position: absolute;
+				bottom:0;
+				left:0;
+				width:80px;
+				height:10px;
+				background: blue;
+			}
+			#info{
+				width: 600px;
+				height: auto;
+				margin: 20px auto;
+				font-family: Phantom-cyr-lat;
+				letter-spacing: 2px;
+				color: green;
+			}
+			.col{
+				box-sizing: border-box;
+				width: 50%;
+				height: auto;
+				padding: 10px;
+			}
+			.leftcol{
+				float: left;
+			}
+			.rightcol{
+				float: right;
+				text-align: right;
+			}
+			.col div{
+				margin-bottom: 15px;
+			}
+			.col div span{
+				display: inline-block;
+				margin-top: 10px;
+			}
+			.col div .fa-heart{
+				display: inline;
+				font-family: FontAwesome;
+				font-size: 18px;
+			}
+			#lives{
+				display: inline;
+				font-family: Phantom-cyr-lat;
+			}
+			button{
+				font-family: Phantom-cyr-lat;
+				cursor: pointer;
+				width: 220px;
+				height: 50px;
+				color: rgba(255,255,255, .7);
+				border: 1px solid rgba(255,255,255, .7);
+				background: transparent;
+				font-size: 14px;
+				letter-spacing: 2px;
+			}
+			button:hover{
+				color: rgba(255,255,255, 1);
+				border: 1px solid rgba(255,255,255, 1);
+				background: transparent;
+			}
+			button:active{
+				outline: none;
+			}
+			button:disabled{
+				cursor: default;
+				color: rgba(255,255,255, .3);
+				border: 1px solid rgba(255,255,255, .3);
+			}
+	</style>
+</head>
+<body>
+		<div id="pole">
+			<div id="ball"></div>
+			<div id="palka"></div>
+		</div>
+		<div id='info'>
+			<div class='col leftcol'>
+				<div><span class="fas fa-heart"></span> <span id='lives'>5</span></div>
+				<button id='but'>START</button>
+			</div>
+			<div class='col rightcol'>
+				<div>Score:<span id='score'>0</span></div>
+				<div>Record:<span id='scoreBest'>0</span></div>
+			</div>
+		</div>
+
+	<script>
+		var pole = document.getElementById('pole');
+		var ball = document.getElementById('ball');
+		var palka = document.getElementById('palka');
+
+		var elemLives = document.getElementById('lives');
+
+		var elemScore = document.getElementById('score');
+		var elemScoreBest = document.getElementById('scoreBest');
+
+		var butStart = document.getElementById('but');
+
+		var poleLeft = pole.getBoundingClientRect().left;
+		var poleBorderWidth = parseInt(window.getComputedStyle(pole).borderLeftWidth);
+		var poleFullWidth = pole.getBoundingClientRect().width - 2*poleBorderWidth;
+		var poleFullHeight= pole.getBoundingClientRect().height - 2*poleBorderWidth;
+
+		var ballWidth = ball.getBoundingClientRect().width;
+		var ballWidthHalf = ballWidth/2;
+		var ballHeight = ball.getBoundingClientRect().height;
+		var ballLeft = ball.offsetLeft;
+		var ballTop = ball.offsetTop;
+
+		var palkaWidth = palka.getBoundingClientRect().width;
+		var palkaHeight = palka.getBoundingClientRect().height;
+
+		var idIntMoveRight;
+		var idIntMoveLeft;
+		var idIntMoveUp;
+		var idIntMoveDown;
+		var idCheckFlags;
+
+		var right = true;
+		var bottom = true;
+
+		var score = 0;
+		var scoreBest = 0;
+		var scoreBestSaved = scoreBest;
+
+		var lives = 5;
+
+		palka.style.left = poleFullWidth/2 - palkaWidth/2 + 'px';
+
+		butStart.addEventListener('click', restart);
+
+		function movePalka(event){
+			palka.style.left = (event.clientX - poleLeft - poleBorderWidth - palkaWidth/2) + 'px';
+			if(palka.offsetLeft <= 0) palka.style.left = 0;
+			else if(palka.offsetLeft > (poleFullWidth - palkaWidth)) palka.style.left = (poleFullWidth - palkaWidth) + 'px';
+		}
+
+		function result(){
+			score++;
+			scoreBest++;
+			elemScore.innerHTML = score;
+			if(scoreBest >= scoreBestSaved) elemScoreBest.innerHTML = scoreBest;
+			if(scoreBestSaved<scoreBest) scoreBestSaved = scoreBest;
+		}
+
+		function restart(){
+			ball.style.left = 0;
+			ball.style.top = 0;
+			ballLeft = 0;
+			ballTop = 0;
+			right = true;
+			bottom = true;
+
+			score = 0;
+			scoreBest = 0;
+			elemScore.innerHTML = score;
+
+			palka.style.left = poleFullWidth/2 - palkaWidth/2 + 'px';
+
+			window.addEventListener('mousemove', movePalka);
+
+			moveBall();
+
+			this.setAttribute('disabled', 'disabled');
+		}
+
+		function moveBall(){
+			noMoveBall();
+
+			if(right && bottom){
+				idIntMoveRight = setInterval('ballLeft++; ball.style.left = ballLeft + "px";', 4);
+				idIntMoveDown = setInterval('ballTop++; ball.style.top = ballTop + "px";', 4);
+				idCheckFlags = setInterval('checkFlags();', 4);
+			}
+			else if(right && !bottom){
+				idIntMoveRight = setInterval('ballLeft++; ball.style.left = ballLeft + "px";', 4);
+				idIntMoveUp = setInterval('ballTop--; ball.style.top = ballTop + "px";', 4);
+				idCheckFlags = setInterval('checkFlags();', 4);
+			}
+			else if(!right && !bottom){
+				idIntMoveLeft = setInterval('ballLeft--; ball.style.left = ballLeft + "px";', 4);
+				idIntMoveUp = setInterval('ballTop--; ball.style.top = ballTop + "px";', 4);
+				idCheckFlags = setInterval('checkFlags();', 4);
+			}
+			else if(!right && bottom){
+				idIntMoveLeft = setInterval('ballLeft--; ball.style.left = ballLeft + "px";', 4);
+				idIntMoveDown = setInterval('ballTop++; ball.style.top = ballTop + "px";', 4);
+				idCheckFlags = setInterval('checkFlags();', 4);
+			}
+		}
+
+		function checkFlags(){
+
+			var canToBeatOff = ((ball.offsetLeft < (palka.offsetLeft + palkaWidth - ballWidthHalf)) && (ball.offsetLeft > (palka.offsetLeft - ballWidthHalf)));
+
+			if(ballLeft < 1){
+				right = true;
+				moveBall();
+			}
+			else if(ballLeft >= (poleFullWidth - ballWidth)){
+				right = false;
+				moveBall();
+			}
+			if(ballTop < 1){
+				bottom = true;
+				moveBall();
+			}
+			else if(ballTop >= (poleFullHeight - ballHeight - palkaHeight)){
+				if(canToBeatOff){
+					bottom = false;
+					moveBall();
+					if(ballTop == (poleFullHeight - ballHeight - palkaHeight)) result();
+				}
+				if(ballTop >= (poleFullHeight - ballHeight)){
+					noMoveBall();
+					window.removeEventListener('mousemove', movePalka);
+					butStart.removeAttribute('disabled');
+					elemScore.innerHTML = 0;
+					elemScoreBest.innerHTML = scoreBestSaved;
+					if(lives > 0){
+						lives--;
+					}
+					elemLives.innerHTML = lives;
+					if(lives == 0) {
+						butStart.setAttribute('disabled', 'disabled');
+						palka.style.backgroundColor = 'rgba(255,255,255, .3)';
+						ball.style.backgroundColor = 'rgba(255,255,255, .3)';
+						pole.style.borderColor = 'rgba(255,255,255, .3)';
+					}
+				}
+			}
+		}
+
+		function noMoveBall(){
+
+			clearInterval(idIntMoveLeft);
+			clearInterval(idIntMoveRight);
+			clearInterval(idIntMoveUp);
+			clearInterval(idIntMoveDown);
+			clearInterval(idCheckFlags);
+
+		}
+		
+		
+	</script>
+</body>
+</html>
